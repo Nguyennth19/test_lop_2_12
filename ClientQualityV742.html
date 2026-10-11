@@ -1,0 +1,22 @@
+/* V7.4.2 – only ADMIN can request detailed diagnostics. */
+function refreshQualityV742(run){
+ if(state.auth?.role!=='ADMIN')return;
+ const token=state.auth.token,summary=$('qualitySummaryV742'),issues=$('qualityProblemsV742'),media=$('mediaStatusV742');
+ if(!summary||!issues)return;
+ summary.innerHTML='<div class="empty">Đang kiểm tra…</div>';
+ const receive=()=>{
+  if(state.auth?.role!=='ADMIN'||state.auth.token!==token)return;
+  rpc('adminQualityV742',[token],result=>{
+   if(state.auth?.token!==token)return;
+   const cards=[['Lỗi nghiêm trọng',result.high],['Cần kiểm tra',result.medium],['Cần bổ sung',result.low]];
+   summary.innerHTML=cards.map(([name,value])=>'<div class="v742-quality-item"><small>'+esc(name)+'</small><strong>'+esc(value)+'</strong></div>').join('');
+   const rows=result.recent||[];
+   issues.innerHTML=rows.length?'<div class="tablewrap"><table class="v742-issues"><thead><tr><th>Mức</th><th>Nguồn</th><th>Mã</th><th>Chi tiết</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(x.level)+'</td><td>'+esc(x.source)+'</td><td>'+esc(x.id)+'</td><td>'+esc(x.description)+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Không phát hiện vấn đề trong các quy tắc đã kiểm tra.</div>';
+  },fail);
+  rpc('adminMediaStatusV742',[token],records=>{
+   if(state.auth?.token!==token)return;
+   media.textContent='Ảnh / QR: '+records.map(x=>x.kind+': '+(x.ok?'Đọc được':'Cần kiểm tra')).join(' · ');
+  },()=>{media.textContent='Không thể kiểm tra kết nối tệp từ tài khoản triển khai.';});
+ };
+ if(run)rpc('runQualityAdminV742',[token],receive,fail);else receive();
+}
