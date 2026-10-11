@@ -450,3 +450,132 @@ input,select,textarea{font-family:var(--ds-font);min-width:0;max-width:100%}
 .expense-mobile-cards{gap:12px}
 @media(max-width:720px){.expense-desktop{display:none}.expense-mobile-cards{display:grid}.expense-entry .expense-thumb>img,.expense-entry .expense-thumb-placeholder{height:64px;width:64px}.expense-entry .expense-thumb{min-width:70px}}
 @media(max-width:370px){.expense-entry-head{flex-wrap:wrap}.expense-entry-amount{margin-left:auto}}
+
+/* V7.3.1: stable labels on narrow mobile cards */
+.contact-prefix,.contact-child{display:block;text-align:center;line-height:1.4}
+.contact-prefix{font-weight:500;font-size:12px}
+.contact-child{font-weight:800;white-space:nowrap;font-size:clamp(11px,2.8vw,15px)}
+.directory-photo-skeleton{display:grid;place-items:center;min-height:100%;min-width:100%}
+@media(max-width:420px){.directory-link{padding:12px 5px}.contact-prefix{font-size:11px}.contact-child{font-size:12px}.directory-hint{font-size:10px}}
+
+
+/* V7.3 – Bước 5.1: Bốn thẻ Dashboard trên điện thoại 320–430px.
+   Chỉ tác động .stats.four để giữ nguyên trang Khoản hỗ trợ và desktop. */
+@media (max-width: 430px) {
+  .page .stats.four { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .page .stats.four > .stat { min-width: 0; padding: 12px 10px; overflow: hidden; }
+  .page .stats.four > .stat label { font-size: 11px; line-height: 1.45; min-height: 2.9em; margin: 9px 0 6px; }
+  .page .stats.four > .stat strong {
+    display: block; min-width: 0; max-width: 100%;
+    font-size: clamp(13px, 3.45vw, 16px);
+    line-height: 1.3; letter-spacing: -0.025em;
+    white-space: nowrap; overflow-wrap: normal; word-break: normal;
+    font-variant-numeric: tabular-nums;
+  }
+}
+@media (max-width: 350px) {
+  .page .stats.four { grid-template-columns: minmax(0, 1fr); }
+  .page .stats.four > .stat { padding: 14px 16px; }
+  .page .stats.four > .stat label { min-height: 0; }
+  .page .stats.four > .stat strong { font-size: clamp(20px, 7vw, 24px); }
+}
+
+
+/* V7.3 Bước 5.2 — Chỉ trang Khoản chi: thống kê & biểu đồ theo bộ lọc. */
+.page .expense-overview{margin-top:var(--ds-card-gap,16px);margin-bottom:var(--ds-card-gap,16px);min-width:0}
+.expense-overview-head h2,.expense-chart-title h3{margin:0;font-size:clamp(17px,1.7vw,22px);color:#263956}
+.expense-overview-head p,.expense-chart-title span{margin:5px 0 0;color:#60728d;font-size:13px;overflow-wrap:anywhere}
+.expense-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 22px}
+.expense-metric{border:1px solid #dfE8f4;border-radius:16px;padding:16px;min-width:0;background:#f8faff;display:flex;flex-direction:column;gap:8px}
+.expense-metric span{font-size:13px;font-weight:700;color:#526782}
+.expense-metric strong{font-size:clamp(18px,2.2vw,29px);font-weight:850;line-height:1.25;overflow-wrap:anywhere;color:#27486a;font-variant-numeric:tabular-nums}
+.expense-chart-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.expense-chart{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-height:215px;padding:12px 4px 0;border-top:1px solid #e7edf6}
+.expense-chart-item{display:flex;flex-direction:column;min-width:0;align-items:stretch}
+.expense-chart-plot{height:148px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;padding-top:32px;border-bottom:1px solid #cfdaea}
+.expense-chart-bar{width:min(70%,76px);min-height:0;background:#6286d4;border-radius:9px 9px 0 0;transition:height .2s ease}
+.expense-chart-item:nth-child(2) .expense-chart-bar{background:#48a487}
+.expense-chart-item:nth-child(3) .expense-chart-bar{background:#8b72cb}
+.expense-chart-item:nth-child(4) .expense-chart-bar{background:#cf8960}
+.expense-chart-value{position:absolute;top:4px;left:0;right:0;text-align:center;font-size:11px;font-weight:750;white-space:nowrap;color:#30435c}
+.expense-chart-label{text-align:center;font-size:12px;color:#4c5f79;line-height:1.45;font-weight:650;padding:9px 2px 0;overflow-wrap:anywhere}
+@media(max-width:700px){.expense-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.expense-metric:first-child{grid-column:1/-1}.expense-chart{gap:5px}.expense-chart-label{font-size:10px}.expense-chart-value{font-size:10px}.expense-chart-plot{height:135px}}
+@media(max-width:350px){.expense-metrics{grid-template-columns:minmax(0,1fr)}.expense-metric:first-child{grid-column:auto}.expense-chart-value{font-size:9px}.expense-chart-label{font-size:9px}}
+
+/* V7.3 Bước 5.2.1 — Thẻ màu/icon, bộ lọc sau tổng quan và nhãn chart mobile */
+.page .expense-overview{margin-top:0;margin-bottom:var(--ds-card-gap,16px)}
+.page .expense-filters{margin-top:var(--ds-card-gap,16px);margin-bottom:var(--ds-card-gap,16px)}
+.expense-metric{position:relative;gap:5px;padding-top:15px;background:#f3faf7;border-color:#d0eade}
+.expense-metric--amount{background:linear-gradient(135deg,#effaf4,#e2f4e9);border-color:#cae6d6}
+.expense-metric--amount strong{color:#1c7853}
+.expense-metric--count{background:linear-gradient(135deg,#eff5ff,#e4edff);border-color:#d3e1ff}
+.expense-metric--count strong{color:#315bb3}
+.expense-metric--groups{background:linear-gradient(135deg,#f6f1ff,#ece4ff);border-color:#e2d4fc}
+.expense-metric--groups strong{color:#7045af}
+.expense-metric-icon{display:grid;place-items:center;height:39px;width:39px;border-radius:12px;font-size:21px;font-weight:800;margin-bottom:5px;background:#d4eddf;color:#217c52}
+.expense-metric--count .expense-metric-icon{background:#d9e5ff;color:#365cc0}
+.expense-metric--groups .expense-metric-icon{background:#e9dcff;color:#7447b9}
+.expense-chart-item:nth-child(1) .expense-chart-bar{background:linear-gradient(180deg,#5d86e8,#4771cb)}
+.expense-chart-item:nth-child(2) .expense-chart-bar{background:linear-gradient(180deg,#55baa0,#36947b)}
+.expense-chart-item:nth-child(3) .expense-chart-bar{background:linear-gradient(180deg,#a084e7,#8465c5)}
+.expense-chart-item:nth-child(4) .expense-chart-bar{background:linear-gradient(180deg,#e7a06c,#ce8050)}
+.expense-label-short{display:none}
+@media(max-width:700px){
+ .expense-label-full{display:none}
+ .expense-label-short{display:inline}
+ .expense-chart-label{font-size:clamp(8px,2.4vw,11px);white-space:nowrap;overflow-wrap:normal;word-break:normal;padding:9px 0 0;letter-spacing:-.02em}
+ .expense-chart{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding-left:0;padding-right:0}
+ .expense-chart-item{min-width:0}
+ .expense-chart-value{font-size:clamp(8px,2.35vw,10px);letter-spacing:-.02em}
+}
+@media(max-width:350px){.expense-chart-label{font-size:8px;letter-spacing:-.04em}}
+
+/* V7.3 5.2.2 — thống nhất khoảng cách, kích thước thẻ và màu theo từng khu vực */
+.page .stats.four > .stat,.page .support-stats.three > .stat,.page .expense-metrics > .expense-metric{min-height:155px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;gap:0}
+.page .stats.four > .stat label,.page .support-stats.three > .stat label{margin-top:12px;margin-bottom:9px}
+.page .stats.four > .stat strong,.page .support-stats.three > .stat strong{margin-top:auto;padding-top:8px}
+.page .stats.four > .stat:nth-child(1){background:linear-gradient(135deg,#effaf4,#e2f5eb);border-color:#cfeada}
+.page .stats.four > .stat:nth-child(1) strong{color:#28764f}
+.page .stats.four > .stat:nth-child(2){background:linear-gradient(135deg,#fff5ec,#ffecdc);border-color:#f3dac7}
+.page .stats.four > .stat:nth-child(2) strong{color:#b65b30}
+.page .stats.four > .stat:nth-child(3){background:linear-gradient(135deg,#f5f0ff,#ebe4ff);border-color:#e1d5f7}
+.page .stats.four > .stat:nth-child(3) strong{color:#7150b3}
+.page .stats.four > .stat:nth-child(4){background:linear-gradient(135deg,#edf4ff,#e3ecff);border-color:#d4e1fb}
+.page .stats.four > .stat:nth-child(4) strong{color:#3d60b6}
+.page .support-stats.three > .stat:nth-child(1){background:linear-gradient(135deg,#eafaf3,#ddf4e8);border-color:#c8e9d5}
+.page .support-stats.three > .stat:nth-child(2){background:linear-gradient(135deg,#eef5ff,#e2eaff);border-color:#cfdcfc}
+.page .support-stats.three > .stat:nth-child(3){background:linear-gradient(135deg,#f7f1ff,#ece2ff);border-color:#e0d2f6}
+.page .expense-metrics > .expense-metric{gap:7px;min-height:155px}
+.page .expense-metrics > .expense-metric strong{margin-top:auto}
+.expense-metric-icon .line-icon{height:22px;width:22px;stroke-width:1.85;fill:none;stroke:currentColor}
+.page .stats,.page .expense-metrics,.page .two-cols,.page .expense-chart-title{row-gap:var(--ds-card-gap,16px)}
+.page .sectionhead{margin-bottom:var(--ds-card-gap,16px)}
+@media(max-width:700px){.page .stats.four > .stat,.page .support-stats.three > .stat,.page .expense-metrics > .expense-metric{min-height:136px}}
+@media(max-width:350px){.page .stats.four > .stat,.page .support-stats.three > .stat,.page .expense-metrics > .expense-metric{min-height:126px}}
+
+/* V7.3 Bước 5.3 — nút xuất báo cáo đồng nhất ba phân hệ */
+.report-title-row{align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.report-title-row h3{margin:0}.report-title-row p{margin:4px 0 0}
+.report-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.report-actions .button,.report-title-row .button{white-space:nowrap;min-height:38px}
+@media(max-width:480px){.report-title-row .button,.report-actions .button{font-size:12px;padding:9px 11px}.report-title-row{align-items:flex-start}}
+
+/* V7.3 5.4.1: thống nhất bảng màu & bảo vệ ẩn nút báo cáo */
+#exportExpensePdfBtn[hidden],#exportGoodsPdfBtn[hidden],#exportCashPdfBtn[hidden]{display:none!important}
+:root{--finance-green:#39A675;--finance-orange:#E58A49;--finance-blue:#5879D9;--finance-purple:#986BCF}
+.page .support-stats.three > .stat:nth-child(1){background:linear-gradient(135deg,#effaf4,#e2f5eb);border-color:#cfeada}
+.page .support-stats.three > .stat:nth-child(1) strong{color:#28764f}
+.page .support-stats.three > .stat:nth-child(2){background:linear-gradient(135deg,#fff5ec,#ffecdc);border-color:#f3dac7}
+.page .support-stats.three > .stat:nth-child(2) strong{color:#b65b30}
+.page .support-stats.three > .stat:nth-child(3){background:linear-gradient(135deg,#edf4ff,#e3ecff);border-color:#d4e1fb}
+.page .support-stats.three > .stat:nth-child(3) strong{color:#365eb0}
+.page .expense-metric--count{background:linear-gradient(135deg,#fff5ec,#ffecdc);border-color:#f3dac7}
+.page .expense-metric--count strong{color:#b65b30}
+.page .expense-metric--count .expense-metric-icon{background:#ffe0c6;color:#b65b30}
+.page .expense-metric--groups{background:linear-gradient(135deg,#edf4ff,#e3ecff);border-color:#d4e1fb}
+.page .expense-metric--groups strong{color:#365eb0}
+.page .expense-metric--groups .expense-metric-icon{background:#d9e5ff;color:#365eb0}
+.expense-chart-item:nth-child(1) .expense-chart-bar{background:var(--finance-green)}
+.expense-chart-item:nth-child(2) .expense-chart-bar{background:var(--finance-orange)}
+.expense-chart-item:nth-child(3) .expense-chart-bar{background:var(--finance-blue)}
+.expense-chart-item:nth-child(4) .expense-chart-bar{background:var(--finance-purple)}

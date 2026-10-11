@@ -1,6 +1,20 @@
+<section class="panel expense-overview" aria-label="Thống kê khoản chi theo bộ lọc">
+  <div class="expense-overview-head"><div><h2>Thống kê khoản chi</h2><p id="expenseScopeNote">Toàn bộ dữ liệu đang hiển thị</p></div></div>
+  <div class="expense-metrics" aria-live="polite">
+    <div class="expense-metric expense-metric--amount"><span class="expense-metric-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wallet"></use></svg></span><span>Tổng số tiền chi</span><strong id="expenseTotalAmount">0 ₫</strong></div>
+    <div class="expense-metric expense-metric--count"><span class="expense-metric-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-receipt"></use></svg></span><span>Số khoản chi</span><strong id="expenseTotalCount">0</strong></div>
+    <div class="expense-metric expense-metric--groups"><span class="expense-metric-icon" aria-hidden="true"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"></use></svg></span><span>Nhóm có phát sinh</span><strong id="expenseActiveGroups">0 / 4</strong></div>
+  </div>
+  <div class="expense-chart-title"><h3>Biểu đồ cột theo nhóm khoản chi</h3></div>
+  <div id="expenseGroupChart" class="expense-chart" role="img" aria-label="Biểu đồ số tiền chi theo bốn nhóm"></div>
+</section>
 <section class="panel filterbar expense-filters" role="search" aria-label="Tìm kiếm khoản chi">
   <label class="expense-field"><span class="expense-label">Tìm kiếm</span><input id="expenseSearch" type="search" placeholder="Tìm khoản chi, mã giao dịch…" aria-label="Tìm khoản chi hoặc mã giao dịch"></label>
   <label class="expense-field"><span class="expense-label">Nhóm khoản chi</span><select id="expenseCategory" aria-label="Lọc theo nhóm khoản chi"><option value="">Tất cả nhóm khoản chi</option><option>Trang bị học tập</option><option>Hỗ trợ lớp học</option><option>Trang trí sự kiện</option><option>Khác</option></select></label>
   <label class="expense-field"><span class="expense-label">Thời gian</span><select id="expenseMonth" aria-label="Lọc theo tháng"><option value="">Mọi tháng</option></select></label>
 </section>
-<section class="panel expense-results" aria-label="Danh sách khoản chi"><div id="expenseTable"></div></section>
+<section class="panel expense-results" aria-label="Danh sách khoản chi">
+  <div class="sectionhead between report-title-row"><div><h3>Danh sách khoản chi</h3><p>Chi tiết các khoản chi còn hiệu lực</p></div>
+    <button type="button" class="button subtle" id="exportExpensePdfBtn" hidden aria-hidden="true" onclick="exportExpensePdfV753()" title="Tải báo cáo Khoản chi để chia sẻ với phụ huynh">⬇ Xuất PDF Khoản chi</button>
+  </div><div id="expenseTable"></div>
+</section>

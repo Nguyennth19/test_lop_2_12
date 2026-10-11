@@ -18,20 +18,20 @@ function renderContacts(){
 }
 function contactTileV612_(x,kind){
  const id=esc(x.id),name=String(x.name||'');
- const title=kind==='teacher'?`<div class="contact-name">${esc(name)}</div>`:`<div class="contact-name">Phụ huynh bé <strong>${esc(name)}</strong></div>`;
+ const title=kind==='teacher'?`<div class="contact-name">${esc(name)}</div>`:`<div class="contact-name"><span class="contact-prefix">Phụ huynh bé</span><strong class="contact-child">${esc(name)}</strong></div>`;
  const role=x.role?`<div class="contact-role">${esc(x.role)}</div>`:'';
  const disabled=x.canContact?'':' disabled aria-disabled="true"';
- return `<article class="directory-card"><button type="button" class="directory-link" data-contact-id="${id}" onclick="openContactZaloV612_(this.dataset.contactId)" aria-label="Liên hệ Zalo: ${esc(name)}"${disabled}><span class="directory-avatar"><span class="directory-photo-skeleton" id="avatarStatus_${id}">Đang tải ảnh…</span><img id="avatar_${id}" alt="Ảnh đại diện ${esc(name)}" decoding="async" loading="eager" style="opacity:0"></span>${title}${role}${x.canContact?'<span class="directory-hint">Chạm để liên hệ qua Zalo</span>':'<span class="directory-hint muted">Chưa có liên kết Zalo</span>'}</button></article>`;
+ return `<article class="directory-card"><button type="button" class="directory-link" data-contact-id="${id}" onclick="openContactZaloV612_(this.dataset.contactId)" aria-label="Liên hệ Zalo: ${esc(name)}"${disabled}><span class="directory-avatar"><span class="directory-photo-skeleton" id="avatarStatus_${id}">👤</span><img id="avatar_${id}" alt="Ảnh đại diện ${esc(name)}" decoding="async" loading="eager" style="opacity:0"></span>${title}${role}${x.canContact?'<span class="directory-hint">Chạm để liên hệ qua Zalo</span>':'<span class="directory-hint muted">Chưa có liên kết Zalo</span>'}</button></article>`;
 }
 function loadContactPhotoV612_(id){
  const image=$('avatar_'+id),status=$('avatarStatus_'+id);if(!image||!status)return;
  rpc('contactAvatarV612',[id],out=>{
-  if(!out||!/^data:image\/(png|jpeg|webp);base64,/.test(out.src||'')){status.textContent='Chưa có ảnh';return;}
+  if(!out||!/^data:image\/(png|jpeg|webp);base64,/.test(out.src||'')){contactFallbackV731_(id);return;}
   image.onload=()=>{image.style.opacity='1';status.style.display='none'};
-  image.onerror=()=>{image.style.opacity='0';status.style.display='block';status.textContent='Không tải được ảnh'};
+  image.onerror=()=>{image.style.opacity='0';status.style.display='block';contactFallbackV731_(id)};
   image.src=out.src;
   if(image.complete&&image.naturalWidth>0){image.style.opacity='1';status.style.display='none'};
- },()=>{status.textContent='Không tải được ảnh'});
+ },()=>{contactFallbackV731_(id)});
 }
 function openContactZaloV612_(id){
  // Mở cửa sổ ngay khi bấm để tránh popup blocker trong callback bất đồng bộ.
@@ -59,9 +59,22 @@ function openContactZaloV612_(id){
   msg(e?.message||'Chưa thể mở Zalo');
  });
 }
-function loadContactsPrivate(){if(!state.auth||state.auth.role!=='ADMIN')return;rpc('privateContactsV6',[state.auth.token],x=>{state.privateContacts=x;renderContactsPrivate()});}
-function renderContactsPrivate(){
- const list=state.privateContacts||[];
- $('privateContacts').innerHTML=list.length?`<div class="tablewrap"><table><thead><tr><th>Học sinh / giáo viên</th><th>Liên hệ nội bộ</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.child)}</td><td>${esc(x.parent)}</td><td>${esc(x.role)}</td><td>${esc(x.publish)}</td><td><button class="button subtle" onclick="showContactForm('${esc(x.studentId)}')">Chỉ định</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có dữ liệu liên hệ nội bộ.</div>';
+// V7.3 Bước 3.2: Không tải hoặc dựng bảng liên hệ nội bộ trên Web App.
+// Giữ các hàm tương thích để những lệnh gọi từ ClientCore và ClientForms không gây lỗi.
+function loadContactsPrivate(){
+  // Không gọi privateContactsV6: danh bạ nội bộ được quản lý trực tiếp trên Google Sheets.
 }
-function syncContactsNow(){if(state.auth?.role!=='ADMIN')return;rpc('syncContactsV6',[state.auth.token],x=>{msg('Đã thêm '+x.added+' liên hệ PRIVATE');loadContactsPrivate()});}
+function renderContactsPrivate(){
+  // Không dựng bảng chi tiết; mọi vai trò đều chỉ xem các thẻ liên hệ công khai.
+}
+function syncContactsNow(){
+  // Đồng bộ định kỳ từ ContactSync.gs hoạt động độc lập ở phía máy chủ.
+  // Không gọi API quản trị từ giao diện đã loại bỏ.
+}
+
+/** Always finish photo loading, even when Drive image or RPC fails. */
+function contactFallbackV731_(id){
+ const image=$('avatar_'+id),status=$('avatarStatus_'+id);
+ if(image){image.removeAttribute('src');image.style.opacity='0';}
+ if(status){status.style.display='grid';status.textContent='👤';status.setAttribute('aria-label','Ảnh đại diện mặc định');}
+}

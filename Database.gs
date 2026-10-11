@@ -11,6 +11,24 @@ function find_(name,id){return rows_(name).find(r=>String(r.v[0])===String(id));
 function append_(name,values){const lock=LockService.getScriptLock();lock.waitLock(30000);try{sh_(name).appendRow(values);}finally{lock.releaseLock();}}
 function setRow_(name,row,values){const lock=LockService.getScriptLock();lock.waitLock(30000);try{sh_(name).getRange(row,1,1,values.length).setValues([values]);}finally{lock.releaseLock();}}
 function newId_(prefix){return prefix+'-'+Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyyMMdd-HHmmss')+'-'+Utilities.getUuid().slice(0,7).toUpperCase();}
-function roster_(){const s=sh_(APP.sheets.students),last=s.getLastRow();if(last<4)return [];return s.getRange(4,1,last-3,8).getValues().filter(r=>String(r[1]||'').trim()).map(r=>({id:String(r[0]||'').trim(),child:String(r[1]||'').trim(),parent:String(r[4]||'').trim(),phone:String(r[5]||'').trim(),status:String(r[7]||'').trim()}));}
+/** V7.3: Mã học sinh là khóa bất biến ở cột A, KHÔNG phải số dòng.
+ * roster_() giữ cả học sinh đã chuyển đi để bảo toàn lịch sử; rosterActive_()
+ * dành riêng cho danh sách chọn giao dịch mới và sĩ số hiện hành.
+ */
+function studentStatusV73_(v){
+ const t=String(v||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toUpperCase();
+ if(!t||t==='ACTIVE'||t==='DANG HOC'||t==='DANG_HOC')return 'ACTIVE';
+ if(['TRANSFERRED','CHUYEN DI','CHUYEN_DI','DA CHUYEN','DA_CHUYEN','DA CHUYEN DI'].includes(t))return 'TRANSFERRED';
+ if(['PENDING','CHO XAC NHAN','CHO_XAC_NHAN'].includes(t))return 'PENDING';
+ return 'UNKNOWN';
+}
+function roster_(){
+ const s=sh_(APP.sheets.students),last=s.getLastRow();if(last<4)return [];
+ return s.getRange(4,1,last-3,8).getDisplayValues()
+ .map((r,i)=>({id:String(r[0]||'').trim(),child:String(r[1]||'').trim(),parent:String(r[4]||'').trim(),phone:String(r[5]||'').trim(),status:studentStatusV73_(r[7]),statusRaw:String(r[7]||'').trim(),sheetRow:i+4}))
+ .filter(r=>r.id||r.child);
+}
+function rosterActive_(){return roster_().filter(x=>x.status==='ACTIVE');}
+
 function auditV6_(email,action,id,detail){sh_(APP.sheets.audit).appendRow([new Date(),email,action,id||'',String(detail||'').slice(0,600)]);}
 function toDateText_(v){return dateV6_(v);}

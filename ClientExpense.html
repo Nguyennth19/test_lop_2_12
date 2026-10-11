@@ -21,6 +21,7 @@ function renderExpenses(){
  monthControl.innerHTML='<option value="">Mọi tháng</option>'+months.map(m=>`<option value="${esc(m)}">${esc(m.slice(5))}/${esc(m.slice(0,4))}</option>`).join('');
  monthControl.value=months.includes(month)?month:'';
  const list=items.filter(x=>(!cat||x.category===cat)&&(!month||String(x.date||'').startsWith(month))&&(!q||[x.description,x.category,x.note,x.id].map(v=>String(v??'')).join(' ').toLocaleLowerCase('vi').includes(q)));
+ renderExpenseOverviewV752(list, {category:cat,month:monthControl.value,query:q});
  const view=$('expenseTable');
  if(!list.length){view.innerHTML='<div class="empty">Chưa có khoản chi phù hợp.</div>';return;}
  const table=`<div class="expense-desktop tablewrap"><table class="expense-compact-table"><thead><tr><th>Ngày / Nhóm</th><th>Nội dung</th><th>Số tiền</th><th>Hình ảnh</th>${state.auth?'<th>Quản lý</th>':''}</tr></thead><tbody>${list.map(x=>`<tr><td><div>${esc(localDate(x.date))}</div><span class="expense-category">${esc(x.category)}</span></td><td><strong>${esc(x.description)}</strong>${x.note?`<div class="expense-note">${esc(x.note)}</div>`:''}</td><td class="price">−${esc(VND(x.amount))}</td><td>${expensePhotosV72(x)}</td>${state.auth?`<td>${expenseActionsV72(x)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
@@ -28,6 +29,36 @@ function renderExpenses(){
  view.innerHTML=table+cards;
  activateExpenseThumbsV72(view);
 }
+
+/* V7.3 Bước 5.2: thống kê và biểu đồ đều dùng cùng danh sách đã lọc với bảng chi tiết.
+   Không đọc dữ liệu nội bộ, không cộng các bản ghi đã xóa (server đã lọc tại publicExpensesV6). */
+const EXP_SHORT_LABELS_V752={'Trang bị học tập':'Học tập','Hỗ trợ lớp học':'Hỗ trợ lớp','Trang trí sự kiện':'Trang trí','Khác':'Khác'};
+const EXP_CATEGORIES_V752=['Trang bị học tập','Hỗ trợ lớp học','Trang trí sự kiện','Khác'];
+function renderExpenseOverviewV752(list, filter){
+ const rows=Array.isArray(list)?list:[];
+ const valid=rows.filter(x=>Number.isFinite(Number(x.amount))&&Number(x.amount)>=0);
+ const total=valid.reduce((a,x)=>a+Number(x.amount),0);
+ const byCategory=EXP_CATEGORIES_V752.map(name=>({name,amount:valid.filter(x=>x.category===name).reduce((sum,x)=>sum+Number(x.amount),0)}));
+ const extra=valid.filter(x=>!EXP_CATEGORIES_V752.includes(x.category)).reduce((sum,x)=>sum+Number(x.amount),0);
+ if(extra>0)byCategory.push({name:'Nhóm khác (chưa chuẩn hóa)',amount:extra});
+ const count=valid.length,positive=byCategory.filter(x=>x.amount>0).length;
+ $('expenseTotalAmount').textContent=VND(total);
+ $('expenseTotalCount').textContent=String(count);
+ $('expenseActiveGroups').textContent=positive+' / '+byCategory.length;
+ const scope=[];
+ if(filter.category)scope.push('Nhóm: '+filter.category);
+ if(filter.month)scope.push('Tháng: '+filter.month.slice(5)+'/'+filter.month.slice(0,4));
+ if(filter.query)scope.push('Tìm kiếm: '+filter.query);
+ $('expenseScopeNote').textContent=scope.length?'Theo bộ lọc: '+scope.join(' · '):'Toàn bộ các khoản chi hiện có';
+ const max=Math.max(...byCategory.map(x=>x.amount),0);
+
+ $('expenseGroupChart').setAttribute('aria-label','Phân bổ chi: '+byCategory.map(x=>x.name+' '+VND(x.amount)).join('; '));
+ $('expenseGroupChart').innerHTML=byCategory.map(x=>{
+  const percentage=max?Math.max(0,x.amount/max*100):0;
+  return `<div class="expense-chart-item"><div class="expense-chart-plot"><span class="expense-chart-value">${esc(VND(x.amount))}</span><div class="expense-chart-bar" style="height:${percentage.toFixed(2)}%" aria-hidden="true"></div></div><span class="expense-chart-label" title="${esc(x.name)}"><span class="expense-label-full">${esc(x.name)}</span><span class="expense-label-short" aria-hidden="true">${esc(EXP_SHORT_LABELS_V752[x.name]||x.name)}</span></span></div>`;
+ }).join('');
+}
+
 function activateExpenseThumbsV72(root){
  if(expenseThumbObserverV72)expenseThumbObserverV72.disconnect();
  if('IntersectionObserver' in window){
@@ -62,3 +93,25 @@ function paintExpenseThumbV72(btn,data){
 $('expenseSearch').addEventListener('input',renderExpenses);
 $('expenseCategory').addEventListener('change',renderExpenses);
 $('expenseMonth').addEventListener('change',renderExpenses);
+
+
+/* V7.3 Bước 5.3 — Xuất PDF từ server; KHÔNG xuất dữ liệu nội bộ trên trình duyệt. */
+function downloadFinancePdfV753(method,buttonId,fallbackName){
+  if(!state.auth||!state.auth.token){alert('Vui lòng đăng nhập tài khoản quản lý để xuất báo cáo.');return;}
+  const button=$(buttonId),old=button?button.textContent:'';
+  if(button){button.disabled=true;button.textContent='Đang tạo báo cáo…';}
+  const done=()=>{if(button){button.disabled=false;button.textContent=old;}};
+  rpc(method,[state.auth.token],function(out){
+    try{
+      if(!out||!out.base64)throw new Error('Không nhận được tệp PDF.');
+      const raw=atob(out.base64),bytes=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+      const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      const link=document.createElement('a');link.href=url;link.download=out.filename||fallbackName;
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }catch(e){alert('Không thể tải PDF: '+e.message);}finally{done();}
+  },function(err){done();alert('Không xuất được báo cáo: '+(err&&err.message?err.message:err));});
+}
+
+function exportExpensePdfV753(){downloadFinancePdfV753("exportExpensePdfV753","exportExpensePdfBtn","Bao_cao_khoan_chi_2_12.pdf");}
