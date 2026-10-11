@@ -1,0 +1,5 @@
+/** Non-destructive idempotent setup. Never deletes or overwrites legacy ledger. */
+function migrateV6(){const ss=ss_();let created=[];Object.keys(APP.headers).forEach(name=>{let sh=ss.getSheetByName(name);if(!sh){sh=ss.insertSheet(name);created.push(name);}const headers=APP.headers[name];if(sh.getMaxColumns()<headers.length)sh.insertColumnsAfter(sh.getMaxColumns(),headers.length-sh.getMaxColumns());const old=sh.getRange(1,1,1,headers.length).getValues()[0];if(old.every(v=>!v))sh.getRange(1,1,1,headers.length).setValues([headers]);else if(old.some((v,i)=>String(v)!==headers[i]))throw Error('Cột hiện có của '+name+' khác chuẩn. Không tự ghi đè.');sh.setFrozenRows(1);if(name==='LOGIN_AUDIT'&&!sh.isSheetHidden())sh.hideSheet();});
+ // Only seed contacts on a fresh, empty LIEN_HE tab.
+ const c=sh_(APP.sheets.contacts);if(c.getLastRow()===1){const roster=roster_(),v=roster.map(x=>[x.id,x.child,x.parent,x.phone,'','','','PRIVATE','',new Date()]);if(v.length)c.getRange(2,1,v.length,10).setValues(v);}
+ return {ok:true,created,studentsCopied:c.getLastRow()-1};}

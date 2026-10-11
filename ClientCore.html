@@ -1,0 +1,26 @@
+const $=id=>document.getElementById(id);
+const state={auth:null,public:null,expenses:[],contacts:[],privateIncome:null,privateContacts:null,users:[],charts:[]};
+const VND=n=>Number(n||0).toLocaleString('vi-VN')+' ₫';
+const esc=x=>String(x??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const localDate=s=>s?new Date(s+'T12:00:00').toLocaleDateString('vi-VN'):'';
+const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+function rpc(fn,args,ok,onFail){const g=google.script.run.withSuccessHandler(x=>{if(ok)ok(x)}).withFailureHandler(e=>{if(onFail)onFail(e);else fail(e)});g[fn](...args)}
+function msg(s){$('toast').textContent=s;$('toast').classList.remove('hide');clearTimeout(msg.t);msg.t=setTimeout(()=>$('toast').classList.add('hide'),2800)}
+function fail(e){const text=e?.message||String(e||'Lỗi không xác định');msg('Có lỗi xảy ra');alert(text);if(text.includes('đăng nhập')||text.includes('Phiên đăng nhập')){state.auth=null;authUI()}}
+/** V7.1: shared header state; update after both navigation and authentication changes. */
+function syncPageHeaderActionsV71(){
+ const page=document.body.dataset.currentPage||'home';
+ const allowed=!!state.auth && (state.auth.role==='ADMIN'||state.auth.role==='EDITOR');
+ const support=$('supportActions');
+ const supportWrap=document.querySelector('.top .support-admin-toolbar');
+ const expense=$('expenseAdd');
+ const expenseWrap=document.querySelector('.top .expense-header-actions');
+ const incomeVisible=allowed && page==='income';
+ const expenseVisible=allowed && page==='expenses';
+ if(support)support.classList.toggle('hide',!incomeVisible);
+ if(supportWrap)supportWrap.classList.toggle('hide',!incomeVisible);
+ if(expense)expense.classList.toggle('hide',!expenseVisible);
+ if(expenseWrap)expenseWrap.classList.toggle('hide',!expenseVisible);
+}
+function navigate(page){const labels={home:['Trang chủ','Bức tranh tài chính của lớp học'],income:['Khoản hỗ trợ','Hỗ trợ bằng hiện kim hoặc hiện vật'],expenses:['Khoản chi','Chi tiết chi tiêu có thể tra cứu theo nhóm, tháng và nội dung.'],contacts:['Thông tin liên hệ','Các đầu mối đã được chỉ định'],login:['Đăng nhập quản lý','Tài khoản và quyền thao tác dữ liệu']};document.querySelectorAll('.page').forEach(x=>x.classList.add('hide'));$(page+'Page').classList.remove('hide');document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page===page));$('heading').textContent=labels[page][0];$('subtitle').textContent=labels[page][1];document.body.classList.toggle('home-view',page==='home');document.body.classList.toggle('expense-view',page==='expenses');document.body.classList.toggle('income-view',page==='income');document.body.dataset.currentPage=page;syncPageHeaderActionsV71();if(page==='income'){loadTransferQrV67();if(state.auth)loadIncomePrivate();}if(page==='contacts'&&state.auth)loadContactsPrivate();if(page==='login'&&state.auth?.role==='ADMIN')loadUsers();}
+document.querySelectorAll('.nav').forEach(x=>x.addEventListener('click',()=>navigate(x.dataset.page)));

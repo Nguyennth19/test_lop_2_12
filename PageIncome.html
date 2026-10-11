@@ -1,0 +1,25 @@
+<section class="panel support-cash-intro" aria-labelledby="cashSupportHeading">
+  <div class="support-bank-layout">
+    <div class="support-bank-content">
+      <div class="support-income-header"><h3 id="cashSupportHeading">Hỗ trợ bằng hiện kim</h3></div>
+      <p>Quý phụ huynh có thể đóng góp trực tiếp cho Ban Đại diện lớp hoặc chuyển khoản theo thông tin sau:</p>
+      <dl class="support-bank-details">
+        <div><dt>Ngân hàng</dt><dd>Sacombank</dd></div>
+        <div><dt>Số tài khoản</dt><dd><span class="account-number">063428806741</span> <button type="button" class="support-copy" onclick="copySupportAccount()">Sao chép</button></dd></div>
+        <div><dt>Tên tài khoản</dt><dd>Hoang Le Minh Hang</dd></div>
+      </dl>
+      <p class="support-privacy"><strong>CHỈ</strong> công khai thông tin tổng hợp; thông tin cá nhân của phụ huynh đóng góp được bảo mật.</p>
+    </div>
+    <div class="support-qr-panel" aria-label="Mã QR chuyển khoản">
+      <div class="support-qr-frame"><img id="supportTransferQR" alt="Mã QR chuyển khoản Sacombank của Ban Đại diện lớp" loading="eager" decoding="async"><div id="supportQRStatus" class="support-qr-placeholder" role="status" aria-live="polite">Đang tải mã QR…</div></div>
+      <span>Quét mã để chuyển khoản</span>
+    </div>
+  </div>
+</section>
+<div class="stats three support-stats">
+  <div class="stat"><span class="mini-icon mint"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wallet"></use></svg></span><label>Tổng số hiện kim</label><strong class="support-stat-value cash-value" id="cashTotal">0 ₫</strong></div>
+  <div class="stat"><span class="mini-icon bluebg"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-users"></use></svg></span><label>Phụ huynh đã hỗ trợ / Tổng số</label><strong class="support-stat-value contributors-value" id="cashContributors">0 / 0</strong></div>
+  <div class="stat"><span class="mini-icon purple"><svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chart"></use></svg></span><label>Mức hỗ trợ trung bình</label><strong class="support-stat-value average-value" id="cashAverage">0 ₫</strong></div>
+</div>
+<section class="panel support-goods"><div class="sectionhead between"><div><h3>Hỗ trợ bằng hiện vật</h3><p>Người đóng góp · Tên sản phẩm · Số lượng · Hình ảnh</p></div><div id="goodsPublicCount" class="smallbadge">0 đóng góp</div></div><div id="goodsTable"></div></section>
+<section class="panel hide" id="incomeAdmin"><div class="sectionhead"><h3>Nhật ký hỗ trợ nội bộ</h3><p>Chỉ tài khoản được phân quyền mới xem thông tin từng người hỗ trợ.</p></div><h4>Hiện kim</h4><div id="cashPrivateTable"></div><h4 style="margin-top:24px">Hiện vật</h4><div id="goodsPrivateTable"></div></section>

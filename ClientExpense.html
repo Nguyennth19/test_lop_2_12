@@ -1,0 +1,64 @@
+/* V7.2: expense table + mobile cards; preserve legacy IDs and backend RPC. */
+const EXP_IMG_CACHE_V72=new Map();
+const EXP_IMG_MAX_V72=18;
+let expenseThumbObserverV72=null;
+function expensePhotoButtonV72(x,variant,label){
+  const has=variant==='receipt'?x.hasReceipt:x.hasProduct;
+  if(!has)return '';
+  const id=esc(x.id);
+  return `<button type="button" class="expense-thumb" data-exp-id="${id}" data-exp-kind="${variant}" aria-label="Xem ảnh ${label}: ${esc(x.description)}" title="Xem ${label}"><span class="expense-thumb-placeholder" aria-hidden="true">${variant==='receipt'?'▤':'▧'}</span><span class="expense-thumb-label">${label}</span></button>`;
+}
+function expensePhotosV72(x){return `<div class="expense-thumbnails">${expensePhotoButtonV72(x,'receipt','Chứng từ')}${expensePhotoButtonV72(x,'product','Sản phẩm')}</div>`;}
+function expenseActionsV72(x){if(!state.auth)return '';
+ const id=esc(x.id);
+ return `<div class="actionrow"><button class="button subtle" data-exp-edit="${id}">Sửa</button>${state.auth.role==='ADMIN'?`<button class="button danger" data-exp-delete="${id}">Xóa</button>`:''}</div>`;}
+function renderExpenses(){
+ const search=$('expenseSearch'),group=$('expenseCategory'),monthControl=$('expenseMonth');
+ const q=String(search.value||'').trim().toLocaleLowerCase('vi');
+ const cat=group.value,month=monthControl.value||'';
+ const items=Array.isArray(state.expenses)?state.expenses:[];
+ const months=[...new Set(items.map(x=>String(x.date||'').slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort().reverse();
+ monthControl.innerHTML='<option value="">Mọi tháng</option>'+months.map(m=>`<option value="${esc(m)}">${esc(m.slice(5))}/${esc(m.slice(0,4))}</option>`).join('');
+ monthControl.value=months.includes(month)?month:'';
+ const list=items.filter(x=>(!cat||x.category===cat)&&(!month||String(x.date||'').startsWith(month))&&(!q||[x.description,x.category,x.note,x.id].map(v=>String(v??'')).join(' ').toLocaleLowerCase('vi').includes(q)));
+ const view=$('expenseTable');
+ if(!list.length){view.innerHTML='<div class="empty">Chưa có khoản chi phù hợp.</div>';return;}
+ const table=`<div class="expense-desktop tablewrap"><table class="expense-compact-table"><thead><tr><th>Ngày / Nhóm</th><th>Nội dung</th><th>Số tiền</th><th>Hình ảnh</th>${state.auth?'<th>Quản lý</th>':''}</tr></thead><tbody>${list.map(x=>`<tr><td><div>${esc(localDate(x.date))}</div><span class="expense-category">${esc(x.category)}</span></td><td><strong>${esc(x.description)}</strong>${x.note?`<div class="expense-note">${esc(x.note)}</div>`:''}</td><td class="price">−${esc(VND(x.amount))}</td><td>${expensePhotosV72(x)}</td>${state.auth?`<td>${expenseActionsV72(x)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
+ const cards=`<div class="expense-mobile-cards">${list.map(x=>`<article class="expense-entry"><div class="expense-entry-head"><div><div class="expense-entry-date">${esc(localDate(x.date))} · ${esc(x.category)}</div><strong class="expense-entry-title">${esc(x.description)}</strong></div><strong class="expense-entry-amount">−${esc(VND(x.amount))}</strong></div>${x.note?`<div class="expense-note">${esc(x.note)}</div>`:''}${expensePhotosV72(x)}${expenseActionsV72(x)}</article>`).join('')}</div>`;
+ view.innerHTML=table+cards;
+ activateExpenseThumbsV72(view);
+}
+function activateExpenseThumbsV72(root){
+ if(expenseThumbObserverV72)expenseThumbObserverV72.disconnect();
+ if('IntersectionObserver' in window){
+  expenseThumbObserverV72=new IntersectionObserver(entries=>entries.forEach(entry=>{
+   if(entry.isIntersecting){expenseThumbObserverV72.unobserve(entry.target);loadExpenseThumbV72(entry.target);}
+  }),{rootMargin:'180px'});
+ }
+ root.querySelectorAll('.expense-thumb').forEach(btn=>{
+  btn.addEventListener('click',()=>preview('expense',btn.dataset.expId,btn.dataset.expKind));
+  if(expenseThumbObserverV72)expenseThumbObserverV72.observe(btn);else loadExpenseThumbV72(btn);
+ });
+ root.querySelectorAll('[data-exp-edit]').forEach(btn=>btn.addEventListener('click',()=>showExpenseForm(btn.dataset.expEdit)));
+ root.querySelectorAll('[data-exp-delete]').forEach(btn=>btn.addEventListener('click',()=>deleteRecord('expense',btn.dataset.expDelete)));
+}
+function loadExpenseThumbV72(btn){
+ const id=btn.dataset.expId,kind=btn.dataset.expKind,key=id+'|'+kind;
+ if(EXP_IMG_CACHE_V72.has(key)){paintExpenseThumbV72(btn,EXP_IMG_CACHE_V72.get(key));return;}
+ // Backend publicMediaV6 already checks whether an image is allowed to be publicly read.
+ rpc('publicMediaV6',['expense',id,kind],result=>{
+  if(!result||result.type!=='image'||typeof result.data!=='string'||!result.data.startsWith('data:image/'))return;
+  EXP_IMG_CACHE_V72.set(key,result.data);
+  while(EXP_IMG_CACHE_V72.size>EXP_IMG_MAX_V72)EXP_IMG_CACHE_V72.delete(EXP_IMG_CACHE_V72.keys().next().value);
+  document.querySelectorAll('.expense-thumb').forEach(el=>{if(el.dataset.expId===id&&el.dataset.expKind===kind)paintExpenseThumbV72(el,result.data)});
+ },()=>{ /* keep placeholder if Drive permission/media load fails */ });
+}
+function paintExpenseThumbV72(btn,data){
+ if(!btn.isConnected)return;
+ let img=btn.querySelector('img');
+ if(!img){img=document.createElement('img');img.alt='';img.loading='lazy';btn.insertBefore(img,btn.firstChild)}
+ img.src=data;btn.classList.add('has-photo');
+}
+$('expenseSearch').addEventListener('input',renderExpenses);
+$('expenseCategory').addEventListener('change',renderExpenses);
+$('expenseMonth').addEventListener('change',renderExpenses);

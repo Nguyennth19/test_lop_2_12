@@ -1,0 +1,43 @@
+/* V6.8: fresh endpoint avoids collisions with older deployment versions. */
+let transferQrLoadedV67=false;
+function loadTransferQrV67(){
+  const img=$('supportTransferQR'),status=$('supportQRStatus');
+  if(!img||!status)return;
+  const embedded=window.__TRANSFER_QR_V69;
+  if(!embedded || !embedded.ok || !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(String(embedded.src||''))){
+    img.classList.add('hide');
+    status.classList.remove('hide');
+    status.textContent=embedded?.error||'Mã QR chưa được nạp. Vui lòng kiểm tra Media.gs và Index.html.';
+    return;
+  }
+  if(img.dataset.qrLoaded==='yes')return;
+  // Eager load a visible image. A display:none + loading=lazy image may never fire load.
+  img.loading='eager';
+  img.classList.remove('hide');
+  status.classList.remove('hide');
+  status.textContent='Đang tải mã QR…';
+  img.onload=function(){
+    if(img.naturalWidth>0){
+      img.dataset.qrLoaded='yes';
+      status.classList.add('hide');
+    }else{
+      qrImageErrorV610_(img,status);
+    }
+  };
+  img.onerror=function(){qrImageErrorV610_(img,status);};
+  // Assign the src only after handlers and visible state are ready.
+  if(img.src!==embedded.src)img.src=embedded.src;
+  // Browser cache may resolve synchronously, so also handle completed images.
+  if(img.complete && img.naturalWidth>0){
+    img.dataset.qrLoaded='yes';
+    status.classList.add('hide');
+  }
+}
+function qrImageErrorV610_(img,status){
+  img.classList.add('hide');
+  status.classList.remove('hide');
+  status.textContent='Trình duyệt không thể giải mã ảnh QR. Vui lòng kiểm tra định dạng hoặc mở ảnh gốc trong Drive.';
+}
+
+function copySupportAccount(){const t='063428806741';if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(()=>msg('Đã sao chép số tài khoản')).catch(()=>fallbackCopyAccountV67(t));}else fallbackCopyAccountV67(t);}
+function fallbackCopyAccountV67(t){const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy');msg('Đã sao chép số tài khoản');}catch(e){msg('Số tài khoản: '+t)}a.remove();}

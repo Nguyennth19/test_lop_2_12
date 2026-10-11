@@ -1,0 +1,67 @@
+// V6.12 Directory: approved rows only; images loaded separately as eager Base64 data URIs.
+function renderContacts(){
+ const list=Array.isArray(state.contacts)?state.contacts:[];
+ const unique=new Set();
+ const groups={teacher:[],board:[],parent:[]};
+ list.forEach(item=>{
+  const key=String(item.id||'');if(!key||unique.has(key))return;unique.add(key);
+  if(groups[item.kind])groups[item.kind].push(item);
+ });
+ const targets={teacher:'contactTeachers',board:'contactBoard',parent:'contactParents'};
+ Object.keys(targets).forEach(kind=>{
+  const root=$(targets[kind]);if(!root)return;
+  const data=groups[kind];
+  root.innerHTML=data.length?data.map(x=>contactTileV612_(x,kind)).join(''):'<div class="empty">Chưa có liên hệ được duyệt công khai.</div>';
+ });
+ // Load images after DOM insertion; never use loading=lazy together with display:none.
+ list.filter(x=>unique.has(String(x.id))).forEach(x=>loadContactPhotoV612_(x.id));
+}
+function contactTileV612_(x,kind){
+ const id=esc(x.id),name=String(x.name||'');
+ const title=kind==='teacher'?`<div class="contact-name">${esc(name)}</div>`:`<div class="contact-name">Phụ huynh bé <strong>${esc(name)}</strong></div>`;
+ const role=x.role?`<div class="contact-role">${esc(x.role)}</div>`:'';
+ const disabled=x.canContact?'':' disabled aria-disabled="true"';
+ return `<article class="directory-card"><button type="button" class="directory-link" data-contact-id="${id}" onclick="openContactZaloV612_(this.dataset.contactId)" aria-label="Liên hệ Zalo: ${esc(name)}"${disabled}><span class="directory-avatar"><span class="directory-photo-skeleton" id="avatarStatus_${id}">Đang tải ảnh…</span><img id="avatar_${id}" alt="Ảnh đại diện ${esc(name)}" decoding="async" loading="eager" style="opacity:0"></span>${title}${role}${x.canContact?'<span class="directory-hint">Chạm để liên hệ qua Zalo</span>':'<span class="directory-hint muted">Chưa có liên kết Zalo</span>'}</button></article>`;
+}
+function loadContactPhotoV612_(id){
+ const image=$('avatar_'+id),status=$('avatarStatus_'+id);if(!image||!status)return;
+ rpc('contactAvatarV612',[id],out=>{
+  if(!out||!/^data:image\/(png|jpeg|webp);base64,/.test(out.src||'')){status.textContent='Chưa có ảnh';return;}
+  image.onload=()=>{image.style.opacity='1';status.style.display='none'};
+  image.onerror=()=>{image.style.opacity='0';status.style.display='block';status.textContent='Không tải được ảnh'};
+  image.src=out.src;
+  if(image.complete&&image.naturalWidth>0){image.style.opacity='1';status.style.display='none'};
+ },()=>{status.textContent='Không tải được ảnh'});
+}
+function openContactZaloV612_(id){
+ // Mở cửa sổ ngay khi bấm để tránh popup blocker trong callback bất đồng bộ.
+ // Trên thiết bị di động, trình duyệt/hệ điều hành sẽ tự quyết định có mở ứng dụng Zalo hay không.
+ const tab=window.open('about:blank','_blank');
+ if(tab){
+  try{
+   tab.opener=null;
+   tab.document.title='Đang mở Zalo…';
+   tab.document.body.textContent='Đang mở liên hệ Zalo…';
+  }catch(_){}
+ }
+ rpc('contactZaloV612',[id],out=>{
+  if(out&&/^https:\/\/zalo\.me\/0\d{9}$/.test(out.url)){
+   if(tab&&!tab.closed)tab.location.replace(out.url);
+   else{
+    msg('Trình duyệt đã chặn tab mới. Vui lòng cho phép pop-up và thử lại.');
+   }
+  } else {
+   if(tab&&!tab.closed)tab.close();
+   msg('Chưa có liên kết Zalo được phép dùng');
+  }
+ },e=>{
+  if(tab&&!tab.closed)tab.close();
+  msg(e?.message||'Chưa thể mở Zalo');
+ });
+}
+function loadContactsPrivate(){if(!state.auth||state.auth.role!=='ADMIN')return;rpc('privateContactsV6',[state.auth.token],x=>{state.privateContacts=x;renderContactsPrivate()});}
+function renderContactsPrivate(){
+ const list=state.privateContacts||[];
+ $('privateContacts').innerHTML=list.length?`<div class="tablewrap"><table><thead><tr><th>Học sinh / giáo viên</th><th>Liên hệ nội bộ</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.child)}</td><td>${esc(x.parent)}</td><td>${esc(x.role)}</td><td>${esc(x.publish)}</td><td><button class="button subtle" onclick="showContactForm('${esc(x.studentId)}')">Chỉ định</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Chưa có dữ liệu liên hệ nội bộ.</div>';
+}
+function syncContactsNow(){if(state.auth?.role!=='ADMIN')return;rpc('syncContactsV6',[state.auth.token],x=>{msg('Đã thêm '+x.added+' liên hệ PRIVATE');loadContactsPrivate()});}
