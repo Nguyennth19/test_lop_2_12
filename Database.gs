@@ -59,24 +59,43 @@ function toDateText_(v){return dateV6_(v);}
  * A failed audit append triggers a best-effort rollback of the same sheet row.
  * Only changes made through this helper are covered; direct spreadsheet edits are not.
  */
+/**
+ * Financial write + audit: script lock serializes Apps Script writes.
+ * Not a database transaction: rollback can fail; in that case explicitly
+ * report the affected record, which must be reconciled before retrying.
+ */
 function commitFinancialChangeV74_(actor,table,id,prior,next,action,reason){
+ const why=requireChangeReasonV74_(reason);
  const lock=LockService.getScriptLock();lock.waitLock(30000);
  try{
-  const sh=sh_(table),existing=find_(table,id);
-  if(prior){
-   if(!existing)throw Error('Bản ghi không còn tồn tại.');
-   const before=existing.v,serialize=x=>JSON.stringify(x);
-   if(serialize(before)!==serialize(prior.v))throw Error('Dữ liệu vừa được thay đổi từ nơi khác. Vui lòng tải lại.');
-   const row=existing.row;
-   sh.getRange(row,1,1,next.length).setValues([next]);
-   try{auditChangeV74_(actor,action,table,id,before,next,reason);}
-   catch(err){sh.getRange(row,1,1,before.length).setValues([before]);throw Error('Không thể ghi nhật ký; giao dịch đã được khôi phục. '+err.message);}
-  }else{
-   if(existing)throw Error('Mã giao dịch đã tồn tại. Vui lòng thử lại.');
-   const row=sh.getLastRow()+1;
-   sh.getRange(row,1,1,next.length).setValues([next]);
-   try{auditChangeV74_(actor,action,table,id,null,next,reason);}
-   catch(err){sh.deleteRow(row);throw Error('Không thể ghi nhật ký; giao dịch mới đã được hủy. '+err.message);}
+  const sheet=sh_(table),existing=find_(table,id);
+  if(prior&&!existing)throw Error('Bản ghi không còn tồn tại.');
+  if(!prior&&existing)throw Error('Mã giao dịch đã tồn tại. Vui lòng thử lại.');
+  const normalize=v=>JSON.stringify(v,(k,x)=>x instanceof Date?x.toISOString():x);
+  if(prior&&normalize(existing.v)!==normalize(prior.v))
+   throw Error('Dữ liệu vừa được thay đổi. Vui lòng tải lại và thực hiện lại.');
+  const before=existing?existing.v:null;
+  const row=existing?existing.row:sheet.getLastRow()+1;
+  const target=sheet.getRange(row,1,1,next.length);
+  // Avoid permanent row deletion: rollback new rows by clearing only the
+  // inserted range. The lock protects writes performed through this helper.
+  target.setValues([next]);
+  try{
+   auditChangeV74_(actor,action,table,id,before,next,why);
+  }catch(auditErr){
+   try{
+    if(before)sheet.getRange(row,1,1,before.length).setValues([before]);
+    else target.clearContent();
+    SpreadsheetApp.flush();
+   }catch(rollbackErr){
+    console.error('CRITICAL_FINANCE_WRITE_AND_AUDIT_FAILURE '+JSON.stringify({
+     table,id,row,action,auditError:String(auditErr),rollbackError:String(rollbackErr)
+    }));
+    throw Error('LỖI NGHIÊM TRỌNG: không thể ghi nhật ký và khôi phục bản ghi '+id+
+      '. DỪNG thao tác, đối chiếu ngay '+table+' và AUDIT_LOG trước khi thử lại.');
+   }
+   throw Error('Không thể ghi nhật ký; thay đổi đã được hoàn tác. Vui lòng kiểm tra trước khi thử lại.');
   }
+  return {ok:true,id,auditRecorded:true};
  }finally{lock.releaseLock();}
 }

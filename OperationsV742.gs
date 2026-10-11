@@ -93,3 +93,73 @@ function checkMediaSetupV742(){
  catch(e){return {kind:item.type,ok:false,problem:'Không đọc được file/thư mục từ tài khoản đang chạy'};}});
 }
 function adminMediaStatusV742(token){authV6_(token,['ADMIN']);return checkMediaSetupV742();}
+
+/**
+ * V7.4.3: bounded, read-only inspection of referenced Drive files.
+ * Does not download content, alter sharing, or expose names/URLs.
+ * A cursor allows the owner to scan in small batches without timeouts.
+ */
+function inspectReceiptRefsV743_(offset,limit){
+ const sources=[
+  {sheet:APP.sheets.cash,idIndex:8,statusIndex:9,label:'Chứng từ thu'},
+  {sheet:APP.sheets.expenses,idIndex:6,statusIndex:9,label:'Chứng từ chi'},
+  {sheet:APP.sheets.expenses,idIndex:7,statusIndex:9,label:'Ảnh sản phẩm'},
+  {sheet:APP.sheets.goods,idIndex:8,statusIndex:11,label:'Ảnh hiện vật'}
+ ];
+ const records=[];
+ sources.forEach(s=>rows_(s.sheet).forEach(r=>{
+  if(!active_(r,s.statusIndex))return;
+  const fileId=String(r.v[s.idIndex]||'').trim();
+  if(fileId)records.push({source:s.sheet,label:s.label,recordId:String(r.v[0]),fileId});
+ }));
+ const begin=Math.max(0,Math.floor(Number(offset)||0));
+ const count=Math.min(30,Math.max(1,Math.floor(Number(limit)||15)));
+ const batch=records.slice(begin,begin+count);
+ const issues=[],statuses=[];
+ for(const item of batch){
+  try{
+   const file=DriveApp.getFileById(item.fileId);
+   const mime=file.getMimeType(),size=file.getSize();
+   const allowed=/^image\/(jpeg|png|gif|webp)$/i.test(mime)||
+    (item.label==='Chứng từ chi'&&mime==='application/pdf');
+   if(!allowed)issues.push({code:'UNSUPPORTED_FILE',source:item.source,id:item.recordId,type:item.label});
+   if(size>APP.maxFileBytes)issues.push({code:'LARGE_FILE',source:item.source,id:item.recordId,type:item.label});
+   statuses.push({source:item.source,id:item.recordId,ok:allowed&&size<=APP.maxFileBytes});
+  }catch(e){
+   issues.push({code:'FILE_NOT_ACCESSIBLE',source:item.source,id:item.recordId,type:item.label});
+   statuses.push({source:item.source,id:item.recordId,ok:false});
+  }
+ }
+ return {ok:issues.length===0,checked:batch.length,total:records.length,
+  nextOffset:begin+batch.length<records.length?begin+batch.length:null,issues,statuses};
+}
+function adminReceiptAuditV743(token,offset,limit){
+ authV6_(token,['ADMIN']);
+ return inspectReceiptRefsV743_(offset,limit);
+}
+/** Owner-only, read-only command, suitable for the Script Editor. */
+function inspectReceiptRefsManualV743(){
+ const output=inspectReceiptRefsV743_(0,30);
+ console.log(JSON.stringify({checked:output.checked,total:output.total,
+  nextOffset:output.nextOffset,issues:output.issues}));
+ return output;
+}
+/** Owner-only summary; no finance writes or migration. */
+function preDeployReviewV743(){
+ const cash=rows_(APP.sheets.cash).filter(r=>active_(r,9));
+ const expenses=rows_(APP.sheets.expenses).filter(r=>active_(r,9));
+ const goods=rows_(APP.sheets.goods).filter(r=>active_(r,11));
+ const byId=(rows)=>new Set(rows.map(r=>String(r.v[0]))).size===rows.length;
+ const sum=(rows,index)=>rows.reduce((a,r)=>a+Number(r.v[index]||0),0);
+ const totalCash=sum(cash,5),totalExpense=sum(expenses,4);
+ const issues=qualityIssuesV742_();
+ return {timestamp:new Date().toISOString(),finance:{
+  cashCount:cash.length,cashTotal:totalCash,expenseCount:expenses.length,
+  expenseTotal:totalExpense,balance:totalCash-totalExpense,goodsCount:goods.length
+ },uniqueIds:{cash:byId(cash),expenses:byId(expenses),goods:byId(goods)},
+ quality:{total:issues.length,high:issues.filter(x=>x.level==='CAO').length,
+  medium:issues.filter(x=>x.level==='VUA').length,low:issues.filter(x=>x.level==='THAP').length},
+ auditHeadersReady:sh_(APP.sheets.audit).getRange(1,6,1,6).getDisplayValues()[0]
+  .join('|')===['Mã nhật ký','Bảng dữ liệu','Giá trị trước (JSON)','Giá trị sau (JSON)','Lý do điều chỉnh','Múi giờ'].join('|')
+ };
+}
