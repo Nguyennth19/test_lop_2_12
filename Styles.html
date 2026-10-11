@@ -585,3 +585,12 @@ input,select,textarea{font-family:var(--ds-font);min-width:0;max-width:100%}
 .page .support-stats.three > .stat:nth-child(3) .mini-icon{background:#D9E5FF!important;color:#365EB0!important}
 .v74-reason-field{display:flex;flex-direction:column;gap:8px;grid-column:1/-1;font-size:13px;font-weight:700;color:#405776;margin:12px 0}
 .v74-reason-field textarea{width:100%;min-height:72px;resize:vertical;border:1px solid #cad8eb;border-radius:12px;padding:10px;font:inherit}
+
+/* V7.4.2 – Admin-only audit dashboard */
+.v742-quality-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
+.v742-quality-item{border:1px solid #dce5f2;border-radius:15px;padding:15px;background:#f7f9fe;display:flex;flex-direction:column;gap:5px}
+.v742-quality-item strong{font-size:24px}.v742-quality-item small{font-weight:700;color:#62738a}
+.v742-quality-item:nth-child(1){background:#fff1ec;color:#a44929}.v742-quality-item:nth-child(2){background:#fff7e8;color:#a76721}.v742-quality-item:nth-child(3){background:#eaf2ff;color:#365eb0}
+.v742-issues{width:100%;border-collapse:collapse}.v742-issues th,.v742-issues td{text-align:left;padding:9px;border-bottom:1px solid #e4eaf2;font-size:12px;overflow-wrap:anywhere}
+.v742-media-status{font-size:12px;color:#51657d;margin-top:16px;line-height:1.7}
+@media(max-width:520px){.v742-quality-grid{grid-template-columns:1fr}.v742-issues th,.v742-issues td{padding:6px;font-size:11px}}
