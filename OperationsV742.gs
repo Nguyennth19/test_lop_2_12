@@ -76,7 +76,7 @@ function weeklyQualityV742(){return runQualityV742_();}
 function installWeeklyQualityV742(){
  // Run once as script owner; scheduled checks use script owner identity.
  const fn='weeklyQualityV742';
- ScriptApp.getProjectTriggers().filter(x=>x.getHandlerFunction()===fn).forEach(ScriptApp.deleteTrigger);
+ ScriptApp.getProjectTriggers().filter(x=>x.getHandlerFunction()===fn).forEach(trigger=>ScriptApp.deleteTrigger(trigger));
  ScriptApp.newTrigger(fn).timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).everyWeeks(1).inTimezone('Asia/Ho_Chi_Minh').create();
  return {ok:true,frequency:'Chủ nhật khoảng 02:00 (Việt Nam)'};
 }
