@@ -30,5 +30,26 @@ function roster_(){
 }
 function rosterActive_(){return roster_().filter(x=>x.status==='ACTIVE');}
 
-function auditV6_(email,action,id,detail){sh_(APP.sheets.audit).appendRow([new Date(),email,action,id||'',String(detail||'').slice(0,600)]);}
+function auditV6_(email,action,id,detail){
+ const sheet=sh_(APP.sheets.audit);
+ sheet.appendRow([new Date(),email,action,id||'',String(detail||'').slice(0,600)]);
+}
+/** V7.4: the first five legacy AUDIT_LOG columns remain unchanged. */
+function auditChangeV74_(actor,action,table,id,before,after,reason){
+ const sheet=sh_(APP.sheets.audit);
+ const safe=v=>JSON.stringify(v,(k,x)=>x instanceof Date?Utilities.formatDate(x,Session.getScriptTimeZone(),'yyyy-MM-dd HH:mm:ss'):x);
+ const rid=Utilities.getUuid(),now=new Date(),name=String(actor||'').slice(0,120);
+ sheet.appendRow([now,name,action,String(id),String(reason||'').slice(0,600),rid,table,safe(before||null),safe(after||null),String(reason||''),Session.getScriptTimeZone()]);
+ return rid;
+}
+function requireChangeReasonV74_(reason){
+ return required_(reason,300);
+}
+/** Run manually ONCE, after backup. Never edits existing log records. */
+function migrateAuditV74(){
+ const sh=sh_(APP.sheets.audit),headers=['Mã nhật ký','Bảng dữ liệu','Giá trị trước (JSON)','Giá trị sau (JSON)','Lý do điều chỉnh','Múi giờ'];
+ const current=sh.getRange(1,6,1,headers.length).getDisplayValues()[0];
+ if(current.some((v,i)=>v&&v!==headers[i]))throw Error('AUDIT_LOG F:K có dữ liệu không đúng chuẩn, cần kiểm tra thủ công.');
+ sh.getRange(1,6,1,headers.length).setValues([headers]);return {ok:true};
+}
 function toDateText_(v){return dateV6_(v);}
