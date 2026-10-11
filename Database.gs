@@ -53,3 +53,30 @@ function migrateAuditV74(){
  sh.getRange(1,6,1,headers.length).setValues([headers]);return {ok:true};
 }
 function toDateText_(v){return dateV6_(v);}
+
+/**
+ * Single script-lock mutation and private audit append.
+ * A failed audit append triggers a best-effort rollback of the same sheet row.
+ * Only changes made through this helper are covered; direct spreadsheet edits are not.
+ */
+function commitFinancialChangeV74_(actor,table,id,prior,next,action,reason){
+ const lock=LockService.getScriptLock();lock.waitLock(30000);
+ try{
+  const sh=sh_(table),existing=find_(table,id);
+  if(prior){
+   if(!existing)throw Error('Bản ghi không còn tồn tại.');
+   const before=existing.v,serialize=x=>JSON.stringify(x);
+   if(serialize(before)!==serialize(prior.v))throw Error('Dữ liệu vừa được thay đổi từ nơi khác. Vui lòng tải lại.');
+   const row=existing.row;
+   sh.getRange(row,1,1,next.length).setValues([next]);
+   try{auditChangeV74_(actor,action,table,id,before,next,reason);}
+   catch(err){sh.getRange(row,1,1,before.length).setValues([before]);throw Error('Không thể ghi nhật ký; giao dịch đã được khôi phục. '+err.message);}
+  }else{
+   if(existing)throw Error('Mã giao dịch đã tồn tại. Vui lòng thử lại.');
+   const row=sh.getLastRow()+1;
+   sh.getRange(row,1,1,next.length).setValues([next]);
+   try{auditChangeV74_(actor,action,table,id,null,next,reason);}
+   catch(err){sh.deleteRow(row);throw Error('Không thể ghi nhật ký; giao dịch mới đã được hủy. '+err.message);}
+  }
+ }finally{lock.releaseLock();}
+}
