@@ -22,7 +22,7 @@ function showCashForm(id){
  openForm('cash',id?'Sửa ủng hộ hiện kim':'Ủng hộ hiện kim');
  const f=$('cashForm'), selected=id?state.privateIncome?.cash.find(x=>x.id===id):null;
  $('cashPayer').dataset.selectedId=selected?.payerId||'';
- fillStudents('cashPayer');f.elements.date.value=today();
+ fillStudents('cashPayer');f.elements.date.value=today();if(!id&&state.auth?.token){const token=state.auth.token;rpc('cashFormDefaultsV744',[token],x=>{if(state.auth?.token===token&&$('cashForm')===f&&!f.elements.batch.value)f.elements.batch.value=x.batch||'';});}
  if(selected)for(const k of ['id','date','amount','payerId','payerName','batch','method','note'])f.elements[k].value=selected[k]??'';
  addReasonFieldV74_(f,!!id);bindMoneyV73_(f);
  // Người đóng là người thực chuyển tiền, không suy ra từ phụ huynh trong danh sách.
