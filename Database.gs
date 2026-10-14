@@ -76,7 +76,8 @@ function commitFinancialChangeV74_(actor,table,id,prior,next,action,reason){
    throw Error('Dữ liệu vừa được thay đổi. Vui lòng tải lại và thực hiện lại.');
   const before=existing?existing.v:null;
   const row=existing?existing.row:sheet.getLastRow()+1;
-  if(table===APP.sheets.cash&&next.length>=15){next[13]=cashStudentFormulaV744_(row);}\n  const target=sheet.getRange(row,1,1,next.length);
+  if(table===APP.sheets.cash&&next.length>=15){next[13]=cashStudentFormulaV744_(row);}
+  const target=sheet.getRange(row,1,1,next.length);
   // Avoid permanent row deletion: rollback new rows by clearing only the
   // inserted range. The lock protects writes performed through this helper.
   target.setValues([next]);
