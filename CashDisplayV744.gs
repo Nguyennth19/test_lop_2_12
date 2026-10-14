@@ -52,7 +52,7 @@ function migrateCashDisplayV744(){
  // Confirm no pre-existing N/O data before writing.
  if(count){
   const existing=cash.getRange(2,14,count,2).getDisplayValues();
-  if(existing.some(r=>r[0]&&!r[0].startsWith('=IF(')&&r[0]!=='Chưa xác định'))
+  if(existing.some(r=>r[0]&&cashHeader[0]!==CASH_V744.nameHeader))
    throw Error('THU_TIEN N có nội dung; cần kiểm tra thủ công trước khi chạy migration.');
  }
  cash.getRange(1,14,1,2).setValues([[CASH_V744.nameHeader,CASH_V744.titleHeader]]);
