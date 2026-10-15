@@ -64,6 +64,18 @@ function toDateText_(v){return dateV6_(v);}
  * Not a database transaction: rollback can fail; in that case explicitly
  * report the affected record, which must be reconciled before retrying.
  */
+/** Fail before upload or mutation when V7.4.4 migration is missing. */
+function assertCashSchemaV746_(){
+ const sheet=sh_(APP.sheets.cash),expected=APP.headers[APP.sheets.cash];
+ if(!expected||expected.length!==15)throw Error('Cấu hình THU_TIEN chưa đúng V7.4.4.');
+ if(sheet.getMaxColumns()<15)throw Error('THU_TIEN chưa đủ 15 cột; cần chạy migrateCashDisplayV744.');
+ const actual=sheet.getRange(1,1,1,15).getDisplayValues()[0];
+ if(expected.some((header,i)=>actual[i]!==header))
+  throw Error('Cấu trúc THU_TIEN A:O chưa đúng V7.4.4. Hãy kiểm tra migration trước khi nhập phiếu thu.');
+ const account=sh_('TAI_KHOAN');
+ if(account.getRange(1,7).getDisplayValue()!=='Chức vụ')
+  throw Error('TAI_KHOAN chưa có cột G Chức vụ; cần chạy migrateCashDisplayV744.');
+}
 function commitFinancialChangeV74_(actor,table,id,prior,next,action,reason){
  const why=requireChangeReasonV74_(reason);
  const lock=LockService.getScriptLock();lock.waitLock(30000);

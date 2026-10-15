@@ -72,7 +72,7 @@ function previewContactSyncV731(){
  */
 function installSundayContactSyncV731(){
  const fn='weeklyContactSyncV731';
- ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===fn).forEach(ScriptApp.deleteTrigger);
+ ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===fn).forEach(trigger=>ScriptApp.deleteTrigger(trigger));
  ScriptApp.newTrigger(fn).timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(0).nearMinute(0).everyWeeks(1).inTimezone('Asia/Ho_Chi_Minh').create();
  console.log('Đã cài lịch Chủ nhật khoảng 00:00, giờ Việt Nam.');
 }
