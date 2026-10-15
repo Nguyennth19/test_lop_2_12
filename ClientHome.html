@@ -19,7 +19,9 @@ function refreshPublic(){
   }else updateFreshnessV745(false);
   if(smartRefreshV745.pending){smartRefreshV745.pending=false;if(!document.hidden)refreshPublic();}
  };
- names.forEach(name=>rpc(name,[],value=>{responses[name]=value;finish();},error=>{failures.push(String(error?.message||error));finish();}));
+ for(const name of names){
+  rpc(name,[],function(value){responses[name]=value;finish();},function(error){failures.push(String(error?.message||error));finish();});
+ }
 }
 function updateFreshnessV745(success){
  const el=$('lastUpdate');if(!el)return;
