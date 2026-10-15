@@ -11,7 +11,7 @@ function publicDataV6(){
  const eligible=roster_().length;
  const latestExpense=expense.map(r=>({id:String(r.v[0]),date:dateV6_(r.v[1]),category:String(r.v[2]),description:String(r.v[3]),amount:Number(r.v[4]||0)})).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
  return {
-   cash:{total:cashTotal,contributors:contributed.size,eligible,average:contributed.size?Math.round(cashTotal/contributed.size):0},
+   cash:{total:cashTotal,contributors:contributed.size,eligible,average:contributed.size?Math.round(cashTotal/contributed.size/1000)*1000:0},
    summary:{expense:expenseTotal,balance:cashTotal-expenseTotal,expenseCount:expense.length,goodsCount:goods.length,thisMonthExpense:(monthMap[monthKey]||{}).expense||0},
    latestExpense,
    monthly:Object.keys(monthMap).sort().slice(-12).map(k=>({month:k,cash:monthMap[k].cash,expense:monthMap[k].expense})),
