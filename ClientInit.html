@@ -1,1 +1,22 @@
+/* V7.4.5: refresh on first load, returning from background, and every 60 seconds while visible. */
 authUI();navigate('home');refreshPublic();
+const smartRefreshRuntimeV745={lastWake:Date.now()};
+function wakeSmartRefreshV745(force){
+ if(document.hidden)return;
+ const now=Date.now();
+ if(!force && now-smartRefreshRuntimeV745.lastWake<2500)return;
+ smartRefreshRuntimeV745.lastWake=now;
+ refreshPublic();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)wakeSmartRefreshV745(false);});
+window.addEventListener('pageshow',event=>{if(event.persisted)wakeSmartRefreshV745(false);});
+window.addEventListener('focus',()=>wakeSmartRefreshV745(false));
+window.addEventListener('online',()=>wakeSmartRefreshV745(false));
+window.setInterval(()=>{
+ if(!document.hidden && Date.now()-smartRefreshV745.lastStarted>=60000)wakeSmartRefreshV745(true);
+},60000);
+/* GitHub Pages is a separate origin; accept only its existing iframe wake signal. */
+window.addEventListener('message',event=>{
+ if(event.origin!=='https://nguyennth19.github.io' || event.source!==window.parent)return;
+ if(event.data?.type==='LOP212_WAKE_V745')wakeSmartRefreshV745(false);
+});
