@@ -13,11 +13,11 @@ function refreshPublic(){
    state.public=responses.publicDataV6;
    state.expenses=responses.publicExpensesV6;
    state.contacts=responses.publicContactsV6;
-   renderPublic();renderExpenses();renderContacts();
    smartRefreshV745.lastSuccess=Date.now();
+   renderPublic();renderExpenses();renderContacts();
    updateFreshnessV745(true);
   }else updateFreshnessV745(false);
-  if(smartRefreshV745.pending){smartRefreshV745.pending=false;if(!document.hidden)refreshPublic();}
+  if(smartRefreshV745.pending){smartRefreshV745.pending=false;if(!document.hidden && navigator.onLine)refreshPublic();}
  };
  for(const name of names){
   rpc(name,[],function(value){responses[name]=value;finish();},function(error){failures.push(String(error?.message||error));finish();});
@@ -32,7 +32,7 @@ function updateFreshnessV745(success){
   el.textContent='Chưa thể cập nhật · Lần kiểm tra thành công: '+checked;
  }
 }
-function renderPublic(){const p=state.public;if(!p)return;const c=p.cash,s=p.summary;$('homeCash').textContent=VND(c.total);$('homeExpense').textContent=VND(s.expense);$('homeBalance').textContent=VND(s.balance);$('homeGoods').textContent=String(s.goodsCount);$('cashTotal').textContent=VND(c.total);$('cashContributors').textContent=c.contributors+' / '+c.eligible;$('cashAverage').textContent=VND(c.average);$('lastUpdate').textContent='Cập nhật '+p.updated;$('goodsPublicCount').textContent=p.goods.length+' đóng góp';$('homeRecent').innerHTML=p.latestExpense.length?p.latestExpense.map(x=>`<div class="recent-row"><div><b>${esc(x.description)}</b><small>${localDate(x.date)} · ${esc(x.category)}</small></div><strong>−${VND(x.amount)}</strong></div>`).join(''):'<div class="empty">Chưa có khoản chi.</div>';renderGoods();renderCharts();}
+function renderPublic(){const p=state.public;if(!p)return;const c=p.cash,s=p.summary;$('homeCash').textContent=VND(c.total);$('homeExpense').textContent=VND(s.expense);$('homeBalance').textContent=VND(s.balance);$('homeGoods').textContent=String(s.goodsCount);$('cashTotal').textContent=VND(c.total);$('cashContributors').textContent=c.contributors+' / '+c.eligible;$('cashAverage').textContent=VND(c.average);$('goodsPublicCount').textContent=p.goods.length+' đóng góp';$('homeRecent').innerHTML=p.latestExpense.length?p.latestExpense.map(x=>`<div class="recent-row"><div><b>${esc(x.description)}</b><small>${localDate(x.date)} · ${esc(x.category)}</small></div><strong>−${VND(x.amount)}</strong></div>`).join(''):'<div class="empty">Chưa có khoản chi.</div>';renderGoods();renderCharts();}
 function renderGoods(){const list=state.public?.goods||[];if(!list.length){$('goodsTable').innerHTML='<div class="empty">Chưa có hiện vật được duyệt công khai.</div>';return;}$('goodsTable').innerHTML=`<div class="tablewrap"><table><thead><tr><th>Ngày nhận</th><th>Người đóng góp</th><th>Sản phẩm</th><th>Số lượng</th><th>Hình ảnh</th></tr></thead><tbody>${list.map(x=>`<tr><td>${localDate(x.date)}</td><td><b>${esc(x.donor)}</b></td><td><b>${esc(x.product)}</b><div class="tiny">${esc(x.note)}</div></td><td>${esc(x.quantity)} ${esc(x.unit)}</td><td>${x.hasImage?`<img class="previewthumb" id="thumb_${esc(x.id)}" alt="Ảnh hiện vật" onclick="preview('goods','${esc(x.id)}')" />`:'—'}</td></tr>`).join('')}</tbody></table></div>`;list.filter(x=>x.hasImage).slice(0,25).forEach(x=>rpc('publicMediaV6',['goods',x.id,''],p=>{const im=$('thumb_'+x.id);if(im&&p.type==='image')im.src=p.data;}));}
 function renderCharts(){
   const p=state.public;
