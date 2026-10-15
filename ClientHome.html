@@ -28,7 +28,7 @@ function updateFreshnessV745(success){
  if(success){
   el.textContent='Đã kiểm tra lúc '+new Date(smartRefreshV745.lastSuccess).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
  }else{
-  const checked=smartRefreshV745.lastSuccess?new Date(smartRefreshV745.lastSuccess).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'):'chưa có';
+  const checked=smartRefreshV745.lastSuccess?new Date(smartRefreshV745.lastSuccess).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}):'chưa có';
   el.textContent='Chưa thể cập nhật · Lần kiểm tra thành công: '+checked;
  }
 }
