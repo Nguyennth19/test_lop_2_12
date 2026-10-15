@@ -19,7 +19,7 @@ window.addEventListener('online',()=>wakeSmartRefreshV745(false));
 window.setInterval(()=>{
  const last=Math.max(smartRefreshV745.lastStarted,smartRefreshV745.lastSuccess);
  if(!document.hidden && !smartRefreshV745.busy && Date.now()-last>=60000)wakeSmartRefreshV745(true);
-},60000);
+},15000);
 /* GitHub Pages is a separate origin; accept only its existing iframe wake signal. */
 window.addEventListener('message',event=>{
  if(event.origin!=='https://nguyennth19.github.io' || event.source!==window.parent)return;
