@@ -1,19 +1,24 @@
 /* V7.4.5: refresh on first load, returning from background, and every 60 seconds while visible. */
 authUI();navigate('home');refreshPublic();
-const smartRefreshRuntimeV745={lastWake:Date.now()};
+const smartRefreshRuntimeV745={lastWake:Date.now(),wasHidden:false};
 function wakeSmartRefreshV745(force){
  if(document.hidden)return;
  const now=Date.now();
- if(!force && now-smartRefreshRuntimeV745.lastWake<2500)return;
+ // Coalesce focus, pageshow, visibility and parent wake events.
+ if(now-smartRefreshRuntimeV745.lastWake<5000)return;
+ // While a fetch is running, its result is already newer than the wake event.
+ if(smartRefreshV745.busy)return;
+ if(!force && now-smartRefreshV745.lastStarted<5000)return;
  smartRefreshRuntimeV745.lastWake=now;
  refreshPublic();
 }
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)wakeSmartRefreshV745(false);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){smartRefreshRuntimeV745.wasHidden=true;return;}if(smartRefreshRuntimeV745.wasHidden){smartRefreshRuntimeV745.wasHidden=false;wakeSmartRefreshV745(true);}});
 window.addEventListener('pageshow',event=>{if(event.persisted)wakeSmartRefreshV745(false);});
 window.addEventListener('focus',()=>wakeSmartRefreshV745(false));
 window.addEventListener('online',()=>wakeSmartRefreshV745(false));
 window.setInterval(()=>{
- if(!document.hidden && Date.now()-smartRefreshV745.lastStarted>=60000)wakeSmartRefreshV745(true);
+ const last=Math.max(smartRefreshV745.lastStarted,smartRefreshV745.lastSuccess);
+ if(!document.hidden && !smartRefreshV745.busy && Date.now()-last>=60000)wakeSmartRefreshV745(true);
 },60000);
 /* GitHub Pages is a separate origin; accept only its existing iframe wake signal. */
 window.addEventListener('message',event=>{
